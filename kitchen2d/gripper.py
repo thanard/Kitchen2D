@@ -1,7 +1,7 @@
 # Author: Zi Wang
 from Box2D import *
 from Box2D.b2 import *
-from kitchen_constants import *
+from kitchen2d.kitchen_constants import *
 import scipy.interpolate
 import numpy as np
 from motion_planner import motion_planner
@@ -222,6 +222,10 @@ class Gripper(object):
         self.reset_mass()
         self.planning = self.b2w.planning
         self.is_copy = is_copy
+        self.actions = []
+        self.ims = []
+        self.states = []
+
     def reset_mass(self):
         '''
         Reset the mass of the gripper.
@@ -258,7 +262,8 @@ class Gripper(object):
 
 
     def pour(self, to_obj, rel_pos, dangle, exact_control=False,  
-             stop_ratio=1.0, topour_particles=1, p_range=SCREEN_WIDTH):
+             stop_ratio=1.0, topour_particles=1, p_range=SCREEN_WIDTH,
+             n_timesteps=40):
         '''
         Use the gripper to pour from the grapsed cup object to 
         to_obj, another cup object.
@@ -294,14 +299,23 @@ class Gripper(object):
         stopped = False
         t = 0
         while (not stopped and t * TIME_STEP < 30.):
-            t += self.apply_lowlevel_control(dpos, dangle, maxspeed=0.1)
+            t += self.apply_lowlevel_control(dpos, dangle, maxspeed=0.1, save_traj=True)
             post_incupparticles, stopped = self.compute_post_grasp_mass(p_range)
             if exact_control and n_particles - len(post_incupparticles) >= topour_particles*stop_ratio:
-                self.apply_lowlevel_control(dpos, 0, maxspeed=0.1)
+                self.apply_lowlevel_control(dpos, 0, maxspeed=0.1, save_traj=True)
                 break
         in_to_cup, _, _ = incup(to_obj, incupparticles)
-        self.apply_lowlevel_control(dpos, 0., maxspeed=0.5)
-        return True, len(in_to_cup) * 1.0 / n_particles
+        self.apply_lowlevel_control(dpos, 0., maxspeed=0.5, save_traj=True)
+        # Filling in the gap to n_timesteps
+        # import ipdb
+        # ipdb.set_trace()
+        while len(self.ims) < n_timesteps:
+            self.ims.append(self.ims[-1])
+            self.actions.append(np.zeros(3))
+        assert len(self.ims) - 1 == len(self.actions)
+        self.actions.append(np.zeros(3))
+        return True, len(in_to_cup) * 1.0 / n_particles, \
+            np.array(self.ims), np.array(self.actions)
 
     def get_cup_feasible(self, from_obj):
         '''
@@ -850,7 +864,7 @@ class Gripper(object):
         self.mass += obj.mass
         incupparticles = None
         stopped = True
-        if obj.userData == 'cup':
+        if obj.userData in ('cup', 'cup2'):
             incupparticles, outcupparticles, stopped = incup(obj, self.b2w.liquid.particles, p_range=p_range)
             self.mass += np.sum([p.mass for p in incupparticles])
         elif obj.userData == 'spoon':
@@ -939,7 +953,7 @@ class Gripper(object):
             self.b2w.step()
         return True
 
-    def apply_lowlevel_control(self, dpos, dangle, maxspeed=1., collision_check=False):
+    def apply_lowlevel_control(self, dpos, dangle, maxspeed=1., collision_check=False, save_traj=False):
         '''
         Apply a lowlevel controller to the gripper, which moves to the target pose 
         by following the straight line interpolation from the current pose.
@@ -952,6 +966,7 @@ class Gripper(object):
             if collision_check is True, it returns the trajectory until collision happened;
             otherwise, return the length of the trajectory.
         '''
+        #print(dpos, dangle)
         dpos = b2Vec2(dpos)
 
         dposa = np.hstack((dpos, dangle))
@@ -977,11 +992,21 @@ class Gripper(object):
             rforce -= g_aforce
             self.lgripper.ApplyForce(lforce, self.lgripper.position, wake=True)
             self.rgripper.ApplyForce(rforce, self.rgripper.position, wake=True)
-            self.b2w.step()
+            is_step = self.b2w.step()
+            if is_step and save_traj:
+                if self.b2w.is_done():
+                    return step
+                rgb_im = self.b2w.render()
+                self.ims.append(rgb_im)
+                state = np.hstack((self.position, self.angle))
+                if len(self.states) > 0:
+                    # actions will be 1 step less than im
+                    self.actions.append(state-self.states[-1])
+                self.states.append(state)
+                assert self.b2w.image_idx//100 == len(self.ims)
             traj.append((self.position, self.angle))
             if collision_check and self.check_collision():
                 return traj, True
-
         if collision_check:
             return traj, False
         else:

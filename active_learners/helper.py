@@ -2,7 +2,10 @@
 import numpy as np
 import scipy.optimize
 from sklearn.utils import shuffle
-import cPickle as pickle
+try:
+   import cPickle as pickle
+except:
+   import pickle
 from sklearn.metrics import confusion_matrix
 import os
 from scipy.optimize import minimize
@@ -38,6 +41,8 @@ def get_xx_yy(expid, method, exp='pour'):
     '''
     dirnm = 'data/'
     fnm_prefix = os.path.join(dirnm, exp)
+    import ipdb 
+    ipdb.set_trace()
     initx, inity = pickle.load(open('{}_init_data_{}.pk'.format(fnm_prefix, expid)))
     fnm = '{}_{}_{}.pk'.format(fnm_prefix, method, expid)
     xx, yy, c = pickle.load(open(fnm, 'rb'))
@@ -136,8 +141,8 @@ def check_close(x, xx):
     '''
     dist = np.array([np.linalg.norm(x- xp) for xp in xx])
     i = dist.argmin()
-    print xx[i]
-    print 'dist=', dist[i]
+    print(xx[i])
+    print('dist=', dist[i])
 
 def sample_tgmm(center, scale, n, xmin, xmax):
     '''

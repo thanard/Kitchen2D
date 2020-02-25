@@ -1,10 +1,15 @@
 # Author: Zi Wang
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 from Box2D import *
 from Box2D.b2 import *
-from kitchen_constants import *
+from kitchen2d.kitchen_constants import *
 
 import pygame
 import numpy as np
+import cv2
 
 
 class guiWorld:
@@ -16,16 +21,23 @@ class guiWorld:
             caption: caption on the window.
             overclock: number of frames to skip when showing graphics.
         '''
-        self.screen = pygame.display.set_mode(
-            (SCREEN_WIDTH_PX, SCREEN_HEIGHT_PX), 0, 32)
+        # # For not rendering
+        DISPLAY = (1, 1)
+        DEPTH = 32
+        FLAGS = 0
+        tmp_screen = pygame.display.set_mode(DISPLAY, FLAGS, DEPTH) # To avoid visualizing GUI and only generate the data
+        self.screen = pygame.Surface(
+            (SCREEN_WIDTH_PX, SCREEN_HEIGHT_PX))
         pygame.display.set_caption(caption)
         self.clock = pygame.time.Clock()
         self.overclock = overclock
-        self.screen_origin = b2Vec2(SCREEN_WIDTH/2., TABLE_HEIGHT)
+        self.screen_origin = b2Vec2(SCREEN_WIDTH/2., TABLE_HEIGHT/2)
         self.colors = {
             'countertop': (50, 50, 50, 255),
             'gripper': (244, 170, 66, 255),
             'cup': (15, 0, 100, 0),
+            'cup2': (100, 0, 15, 0),
+            'cup3': (0, 100, 15, 0),
             'stirrer': (163, 209, 224, 255),
             'spoon': (73, 11, 61, 255),
             'obstacle': (123, 128, 120, 255),
@@ -76,7 +88,7 @@ class guiWorld:
 
 
 class b2WorldInterface(object):
-    def __init__(self, do_gui=True, save_fig=False, caption='PyBox2D Simulator', overclock=None):
+    def __init__(self, do_gui=True, n_timesteps=40, save_fig=False, caption='PyBox2D Simulator', overclock=None):
         '''
         Interface between Pybox2D and the graphics wrapper guiWorld.
         Args:
@@ -101,6 +113,8 @@ class b2WorldInterface(object):
         self.num_steps = 0
         self.overclock = overclock
         self.liquid = Liquid(self.world)
+        self.n_timesteps = n_timesteps
+
     def enable_gui(self, caption='PyBox2D Simulator'):
         '''
         Enable visualization.
@@ -121,8 +135,9 @@ class b2WorldInterface(object):
         self.gui_world.draw(self.world.bodies)
         if self.save_fig and self.image_idx % 100 == 0:
             pygame.image.save(self.gui_world.screen,
-                              'tmp_images/{num:05d}_{nm}'.format(num=self.image_idx/100, nm= self.image_name)+'.png')
+                              'tmp_images/{num:05d}_{nm}'.format(num=self.image_idx//100, nm=self.image_name)+'.png')
         self.image_idx += 1
+        return self.image_idx % 100 == 0
     def step(self):
         '''
         Wrapper of the step function of b2World.
@@ -131,12 +146,21 @@ class b2WorldInterface(object):
         self.world.ClearForces()
         self.num_steps += 1
         if (self.overclock is None) or (self.num_steps % self.overclock == 0):
-            self.draw()
+            return self.draw()
+        return False
+
+    def render(self):
+        img = pygame.surfarray.array3d(self.gui_world.screen) # W x H x C
+        resized = cv2.resize(img, (64, 64), interpolation=cv2.INTER_LANCZOS4)
+        return resized
+
+    def is_done(self):
+        return self.n_timesteps <= self.image_idx//100
 
 class Kitchen2D(b2WorldInterface):
     def __init__(self, do_gui, sink_w, sink_h, sink_d, sink_pos_x, 
                  left_table_width, right_table_width, faucet_h, faucet_w, faucet_d, planning=True,
-                 obstacles=None, save_fig=False, liquid_name='water', liquid_frequency=0.2, overclock=None):
+                 obstacles=None, save_fig=False, n_timesteps=40, liquid_name='water', liquid_frequency=0.2, overclock=None):
         '''
         Args:
             sink_w: sink length (horizontal).
@@ -159,7 +183,7 @@ class Kitchen2D(b2WorldInterface):
             overclock: number of frames to skip when showing graphics. If overclock is None, 
             this feature is not used.
         '''
-        super(Kitchen2D, self).__init__(do_gui, save_fig=save_fig)
+        super(Kitchen2D, self).__init__(do_gui, save_fig=save_fig, n_timesteps=n_timesteps)
         self.planning = planning
         world = self.world
         self.liquid = Liquid(world, liquid_name=liquid_name, liquid_frequency=liquid_frequency)
@@ -241,7 +265,7 @@ class Kitchen2D(b2WorldInterface):
             pos = np.random.normal(0, 0.1, size=(2)) + \
                 np.array(self.faucet_location)
             self.liquid.make_particles(pos)
-        super(Kitchen2D, self).step()
+        return super(Kitchen2D, self).step()
 
     def gen_liquid_in_cup(self, cup, N, userData='water'):
         '''
@@ -434,7 +458,7 @@ def make_block(b2world_interface, pos, angle, w, h, d=None):
     return body
 
 
-def make_cup(b2world_interface, pos, angle, w, h, d, shifth=0.0):
+def make_cup(b2world_interface, pos, angle, w, h, d, shifth=0.0, user_data='cup'):
     '''
     Return a Box2D body that resembles a cup.
     The center of the cup is at its bottom center.
@@ -477,7 +501,7 @@ def make_cup(b2world_interface, pos, angle, w, h, d, shifth=0.0):
     body.usr_h = h*1.0
     body.usr_d = d*1.0
     body.shift = shift
-    body.userData = "cup"
+    body.userData = user_data
     return body
 
 

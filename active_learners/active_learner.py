@@ -2,7 +2,10 @@ from __future__ import print_function, division
 import numpy as np
 import scipy.optimize
 from sklearn.utils import shuffle
-import cPickle as pickle
+try:
+   import cPickle as pickle
+except:
+   import pickle
 from sklearn.metrics import confusion_matrix
 import os
 from scipy.optimize import minimize
@@ -21,7 +24,7 @@ class ActiveLearner(object):
     def sample(self, context, N):
         pass
 
-    def retrain(self, x, y):
+    def retrain(self, x=None, y=None):
         pass
 
 

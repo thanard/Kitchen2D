@@ -1,7 +1,16 @@
 # Author: Zi Wang
-import cPickle as pickle
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
+try:
+   import cPickle as pickle
+except:
+   import pickle
 import os
 import active_learners.helper as helper
+import h5py
+import numpy as np
 from active_learners.active_learner import run_ActiveLearner
 
 
@@ -69,7 +78,7 @@ def run_exp(expid, exp, method, n_init_data, iters):
     print('Start running the learning experiment...')
     run_ActiveLearner(active_learner, context, learn_fnm, iters)
 
-def sample_exp(expid, exp, method):
+def sample_exp(expid, exp, method, n_eps, n_timesteps_per_ep):
     '''
     Sample from the learned model.
     Args:
@@ -83,15 +92,40 @@ def sample_exp(expid, exp, method):
     active_learner.retrain()
     # Enable gui
     func.do_gui = True
-    while raw_input('Continue? [y/n]') == 'y':
+    # while raw_input('Continue? [y/n]') == 'y':
+    all_ims = []
+    all_actions = []
+    for i in range(n_eps):
+        print("##### %s: %d ######" % (method, i))
         x = active_learner.sample(c)
-        func(x)
+        import ipdb
+        ipdb.set_trace()
+        ims, actions = func(x, n_timesteps_per_ep)
+        # func(x)
+        all_ims.append(ims)
+        all_actions.append(actions)
+    return np.array(all_ims), np.array(all_actions)
 
 if __name__ == '__main__':
-    exp = 'scoop'
-    method = 'gp_lse'
+    exp = 'pour'
+    methods = ['gp_lse']#, 'random']
     expid = 0
-    n_init_data = 10
-    iters = 50
-    run_exp(expid, exp, method, n_init_data, iters)
-    sample_exp(expid, exp, method)
+    n_eps = 500
+    n_timesteps_per_ep = 40
+    # n_init_data = 10
+    # iters = 50
+    save_data = True
+    dataset = h5py.File('/usr/local/google/home/thanard/data/pouring.hdf5', 'w')
+    sim_data = dataset.create_group('sim')
+    sim_data.create_dataset("ims", (n_eps, n_timesteps_per_ep, 64, 64, 3), dtype='f')
+    sim_data.create_dataset("actions", (n_eps, n_timesteps_per_ep, 3), dtype='f')
+
+    # run_exp(expid, exp, method, n_init_data, iters)
+    i = 0
+    for method in methods:
+        ims, actions = sample_exp(expid, exp, method, n_eps//len(methods), n_timesteps_per_ep)
+        # import ipdb
+        # ipdb.set_trace()
+        dataset['sim']['ims'][i:i+n_eps//len(methods)] = ims
+        dataset['sim']['actions'][i:i+n_eps//len(methods)] = actions
+        i += n_eps//len(methods)
