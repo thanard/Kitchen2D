@@ -88,7 +88,7 @@ class guiWorld:
 
 
 class b2WorldInterface(object):
-    def __init__(self, do_gui=True, n_timesteps=40, save_fig=False, caption='PyBox2D Simulator', overclock=None):
+    def __init__(self, do_gui=True, save_fig=False, caption='PyBox2D Simulator', overclock=None):
         '''
         Interface between Pybox2D and the graphics wrapper guiWorld.
         Args:
@@ -113,7 +113,6 @@ class b2WorldInterface(object):
         self.num_steps = 0
         self.overclock = overclock
         self.liquid = Liquid(self.world)
-        self.n_timesteps = n_timesteps
 
     def enable_gui(self, caption='PyBox2D Simulator'):
         '''
@@ -145,22 +144,26 @@ class b2WorldInterface(object):
         self.world.Step(TIME_STEP, VEL_ITERS, POS_ITERS)
         self.world.ClearForces()
         self.num_steps += 1
-        if (self.overclock is None) or (self.num_steps % self.overclock == 0):
-            return self.draw()
+        # if (self.overclock is None) or (self.num_steps % self.overclock == 0):
+        #     return self.draw()
         return False
 
     def render(self):
+        self.gui_world.draw(self.world.bodies)
         img = pygame.surfarray.array3d(self.gui_world.screen) # W x H x C
         resized = cv2.resize(img, (64, 64), interpolation=cv2.INTER_LANCZOS4)
-        return resized
+        assert resized.shape[2] == 3
+        return np.transpose(resized, (1, 0, 2))
 
-    def is_done(self):
-        return self.n_timesteps <= self.image_idx//100
+    def save_observation(self, filepath):
+        self.gui_world.draw(self.world.bodies)
+        pygame.image.save(self.gui_world.screen, filepath)
+
 
 class Kitchen2D(b2WorldInterface):
     def __init__(self, do_gui, sink_w, sink_h, sink_d, sink_pos_x, 
                  left_table_width, right_table_width, faucet_h, faucet_w, faucet_d, planning=True,
-                 obstacles=None, save_fig=False, n_timesteps=40, liquid_name='water', liquid_frequency=0.2, overclock=None):
+                 obstacles=None, save_fig=False, liquid_name='water', liquid_frequency=0.2, overclock=None):
         '''
         Args:
             sink_w: sink length (horizontal).
@@ -183,7 +186,7 @@ class Kitchen2D(b2WorldInterface):
             overclock: number of frames to skip when showing graphics. If overclock is None, 
             this feature is not used.
         '''
-        super(Kitchen2D, self).__init__(do_gui, save_fig=save_fig, n_timesteps=n_timesteps)
+        super(Kitchen2D, self).__init__(do_gui, save_fig=save_fig)
         self.planning = planning
         world = self.world
         self.liquid = Liquid(world, liquid_name=liquid_name, liquid_frequency=liquid_frequency)

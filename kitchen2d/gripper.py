@@ -864,7 +864,7 @@ class Gripper(object):
         self.mass += obj.mass
         incupparticles = None
         stopped = True
-        if obj.userData in ('cup', 'cup2'):
+        if obj.userData in ('cup', 'cup2', 'cup3'):
             incupparticles, outcupparticles, stopped = incup(obj, self.b2w.liquid.particles, p_range=p_range)
             self.mass += np.sum([p.mass for p in incupparticles])
         elif obj.userData == 'spoon':
@@ -993,17 +993,17 @@ class Gripper(object):
             self.lgripper.ApplyForce(lforce, self.lgripper.position, wake=True)
             self.rgripper.ApplyForce(rforce, self.rgripper.position, wake=True)
             is_step = self.b2w.step()
-            if is_step and save_traj:
-                if self.b2w.is_done():
-                    return step
-                rgb_im = self.b2w.render()
-                self.ims.append(rgb_im)
-                state = np.hstack((self.position, self.angle))
-                if len(self.states) > 0:
-                    # actions will be 1 step less than im
-                    self.actions.append(state-self.states[-1])
-                self.states.append(state)
-                assert self.b2w.image_idx//100 == len(self.ims)
+            # if is_step and save_traj:
+            #     if self.b2w.is_done():
+            #         return step
+            #     rgb_im = self.b2w.render()
+            #     self.ims.append(rgb_im)
+            #     state = np.hstack((self.position, self.angle))
+            #     if len(self.states) > 0:
+            #         # actions will be 1 step less than im
+            #         self.actions.append(state-self.states[-1])
+            #     self.states.append(state)
+            #     assert self.b2w.image_idx//100 == len(self.ims)
             traj.append((self.position, self.angle))
             if collision_check and self.check_collision():
                 return traj, True

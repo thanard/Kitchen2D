@@ -5,7 +5,7 @@ GRAVITY = b2Vec2(0.0, -10.0) # gravity of the world
 PPM = 10.0  # pixels per meter
 TARGET_FPS = 100 # frame per second
 TIME_STEP = 1.0 / TARGET_FPS
-SCREEN_WIDTH_PX, SCREEN_HEIGHT_PX = 200, 200 # screen width and height in px
+SCREEN_WIDTH_PX, SCREEN_HEIGHT_PX = 250, 250 # screen width and height in px
 
 SCREEN_WIDTH = SCREEN_WIDTH_PX / PPM # screen width in meter
 SCREEN_HEIGHT = SCREEN_HEIGHT_PX / PPM # screen height in meter
