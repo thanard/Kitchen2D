@@ -14,7 +14,7 @@ import os
 import time
 settings = {
     0: {
-        'do_gui': False,
+        'do_gui': True,
         'sink_w': 4.,
         'sink_h': 5.,
         'sink_d': 1.,
@@ -42,12 +42,12 @@ class Pour(object):
         self.dx = len(self.x_range[0])
         self.task_lengthscale = np.ones(8)*10
         self.do_gui = False
-    def check_legal(self, x, n_timesteps):
+    def check_legal(self, x):
         grasp_ratio, rel_x, rel_y, dangle, cw1, ch1, cw2, ch2 = x
         print(x)
         dangle *= np.sign(rel_x)
         settings[0]['do_gui'] = self.do_gui
-        kitchen = Kitchen2D(n_timesteps=n_timesteps, **settings[0])
+        kitchen = Kitchen2D(**settings[0])
         gripper = Gripper(kitchen, (5,8), 0)
         cup1 = ks.make_cup(kitchen, (0,0), 0, cw1, ch1, 0.5)
         cup2 = ks.make_cup(kitchen, (-15,0), 0, cw2, ch2, 0.5, user_data='cup2')
@@ -73,8 +73,8 @@ class Pour(object):
                 i += 1
                 yield x
 
-    def __call__(self, x, n_timesteps, image_name=None):
-        if not self.check_legal(x, n_timesteps):
+    def __call__(self, x, image_name=None):
+        if not self.check_legal(x):
             return -1.
         grasp_ratio, rel_x, rel_y, dangle, cw1, ch1, cw2, ch2 = x
         dangle *= np.sign(rel_x)
@@ -89,7 +89,7 @@ class Pour(object):
         self.gripper.compute_post_grasp_mass()
         self.gripper.close(timeout=0.1)
         self.gripper.check_grasp(self.cup2)
-        success, score, ims, actions = self.gripper.pour(self.cup1, (rel_x, rel_y), dangle, exact_control=False, p_range=cw1/2, n_timesteps=n_timesteps)
+        success, score, ims, actions = self.gripper.pour(self.cup1, (rel_x, rel_y), dangle, exact_control=False, p_range=cw1/2)
         return ims, actions
         # return np.exp(2*(score*10 - 9.5)) - 1.
         

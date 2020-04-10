@@ -1,7 +1,7 @@
 
 from Box2D import b2Vec2
 # Constants of world
-GRAVITY = b2Vec2(0.0, -10.0) # gravity of the world
+GRAVITY = b2Vec2(0.0, -1.0) # gravity of the world
 PPM = 10.0  # pixels per meter
 TARGET_FPS = 100 # frame per second
 TIME_STEP = 1.0 / TARGET_FPS
@@ -15,6 +15,8 @@ GRIPPER_WIDTH = 0.6
 GRIPPER_HEIGHT = 2.0
 OPEN_WIDTH = 5.0
 TABLE_HEIGHT = 10
+
+PARTICLE_RADIUS = 0.05 # 0.05
 
 TABLE_THICK = 2
 ACC_THRES = 0.1 # threshold for accuracy of positions

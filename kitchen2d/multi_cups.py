@@ -33,7 +33,7 @@ class MultiCups(object):
     def __init__(self):
         #grasp_ratio, relative_pos_x, relative_pos_y, dangle, cw1, ch1, cw2, ch2
         self.x_range = np.array(
-            [[0., -10., 1., -np.pi/3, 3., 3., 4., 4., 3., 3., -10., -10., 2.], 
+            [[0., -10., 5., -np.pi/3, 3., 3., 4., 4., 3., 3., -10., -10., 2.], 
             [1., 10., 10., np.pi/3, 5., 4., 4., 5., 4., 4., -2., 10., 10.]])
             #[1., 10., 10., np.pi, 8., 5., 4.5, 5.]]) this is the upper bound used in the paper.
         self.lengthscale_bound = np.array([np.ones(8)*0.1, [0.15, 0.5, 0.5, 0.2, 0.5, 0.5, 0.5, 0.5]])
@@ -78,7 +78,7 @@ class MultiCups(object):
         traj = self.gripper.apply_lowlevel_control(
           self.gripper.position + action[:2],
           self.gripper.angle + action[2],
-          maxspeed=0.1,
+          maxspeed=0.2,
           save_traj=save_traj)
         return traj
 

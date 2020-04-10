@@ -976,6 +976,8 @@ class Gripper(object):
         assert maxspeed > 0
         max_timesteps = int(np.max(np.abs(dposa - cur_pos)/maxspeed) / TIME_STEP + 1) + t0
         t = max_timesteps
+        # t = max_timesteps = 251
+
 
         cur_v = self.velocity
         v = (dposa - cur_pos - cur_v*t0*TIME_STEP/2) / (t-t0) / TIME_STEP

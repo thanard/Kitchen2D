@@ -35,9 +35,9 @@ class guiWorld:
         self.colors = {
             'countertop': (50, 50, 50, 255),
             'gripper': (244, 170, 66, 255),
-            'cup': (15, 0, 100, 0),
+            'cup3': (15, 0, 100, 0),
             'cup2': (100, 0, 15, 0),
-            'cup3': (0, 100, 15, 0),
+            'cup': (0, 100, 15, 0),
             'stirrer': (163, 209, 224, 255),
             'spoon': (73, 11, 61, 255),
             'obstacle': (123, 128, 120, 255),
@@ -45,7 +45,7 @@ class guiWorld:
             #'sensor': (155, 155, 155, 255), # To visualize the sensor
             'default': (81, 81, 81, 255),
             'faucet': (175, 175, 175, 255),
-            'water': (26, 130, 252),
+            'water': (0, 0, 255), #(26, 130, 252),
             'block': (0, 99, 0),
             'coffee': (165, 42, 42),
             'cream': (225, 225, 225),
@@ -151,7 +151,7 @@ class b2WorldInterface(object):
     def render(self):
         self.gui_world.draw(self.world.bodies)
         img = pygame.surfarray.array3d(self.gui_world.screen) # W x H x C
-        resized = cv2.resize(img, (64, 64), interpolation=cv2.INTER_LANCZOS4)
+        resized = cv2.resize(img, (64, 64), interpolation=cv2.INTER_AREA)
         assert resized.shape[2] == 3
         return np.transpose(resized, (1, 0, 2))
 
@@ -313,7 +313,7 @@ def get_body_vertices(body):
     return vertices
 
 class Liquid(object):
-    def __init__(self, world, liquid_frequency=0.2, density=0.01, friction=0.0, radius=0.05, shape_type='circle', liquid_name='water'):
+    def __init__(self, world, liquid_frequency=0.2, density=0.01, friction=0.0, radius=PARTICLE_RADIUS, shape_type='circle', liquid_name='water'):
         '''
         This class manages the liquid particles in the kitchen.
         Args:
