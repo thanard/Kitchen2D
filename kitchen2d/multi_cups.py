@@ -29,10 +29,10 @@ settings = {
     },
     1: {
         'do_gui': False,
-        'sink_w': 6.,
-        'sink_h': 4.,
+        'sink_w': 24.,
+        'sink_h': 20.,
         'sink_d': 0.5,
-        'sink_pos_x': 6.,
+        'sink_pos_x': -12.,
         'left_table_width': 100.,
         'right_table_width': 100.,
         'faucet_h': 15.,
