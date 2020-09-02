@@ -325,9 +325,9 @@ class MultiCupsFaucet(MultiCups):
         kitchen = Kitchen2D(**settings[1])
         kitchen.gui_world.colors['water'] = self.water_color
         gripper = Gripper(kitchen, (5,8), 0)
-        cup1 = ks.make_cup(kitchen, (pos_x1, 0), 0, cw1, ch1, 0.5, user_data=self.base_cup_type)
+        cup1 = ks.make_static_cup(kitchen, (pos_x1, 0), 0, cw1, ch1, 0.5, user_data=self.base_cup_type)
         cup2 = ks.make_cup(kitchen, (pos_x2, 0), 0, cw2, ch2, 0.5, user_data='cup2')
-        cup3 = ks.make_cup(kitchen, (pos_x3, 0), 0, cw3, ch3, 0.5, user_data=self.base_cup_type)
+        cup3 = ks.make_static_cup(kitchen, (pos_x3, 0), 0, cw3, ch3, 0.5, user_data=self.base_cup_type)
         kitchen.add_obstacles(obstacles=[((-13.5, 0), (0.5,20)),
                                          ((13.5, 0), (0.5,20)),
                                          ((0, 21), (26,0.5))])
